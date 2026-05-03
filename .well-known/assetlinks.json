@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tradukt.app",
+      "sha256_cert_fingerprints": ["EE:A2:F4:B1:59:A6:EB:F4:AE:28:ED:C2:ED:DE:8D:EA:E4:83:27:DD:CD:59:BC:DC:A4:A0:4C:F2:EB:6D:BE:1A"]
+    }
+  }
+]
