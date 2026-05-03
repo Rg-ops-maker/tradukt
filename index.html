@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#002395">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tradukt">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Tradukt</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F7FF;min-height:100vh;overscroll-behavior:none;}
+#app{width:100%;max-width:430px;min-height:100vh;background:white;margin:0 auto;display:flex;flex-direction:column;}
+.topbar{height:6px;background:linear-gradient(to right,#002395 33%,white 33%,white 66%,#ED2939 66%);flex-shrink:0;}
+.appbar{background:#002395;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.appbar-back{background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0 8px 0 0;display:none;}
+.appbar-title{color:white;font-size:20px;font-weight:600;}
+.screen{padding:20px 16px;flex:1;overflow-y:auto;}
+.scan-area{display:flex;flex-direction:column;align-items:center;gap:18px;padding-top:28px;}
+.scan-icon{width:80px;height:80px;border:3px solid #002395;border-radius:12px;display:flex;align-items:center;justify-content:center;}
+.scan-hint{font-size:14px;color:#667788;text-align:center;max-width:280px;line-height:1.5;}
+.btn-primary{background:#002395;color:white;border:none;border-radius:10px;padding:14px 28px;font-size:16px;font-weight:500;cursor:pointer;width:100%;max-width:300px;}
+.btn-primary:active{opacity:0.8;}
+#scanner-wrap{display:none;width:100%;max-width:300px;border-radius:12px;overflow:hidden;position:relative;background:#000;}
+#scanner-video{width:100%;display:block;max-height:200px;object-fit:cover;}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.scan-frame{width:190px;height:90px;border:2px solid rgba(255,255,255,0.9);border-radius:8px;position:relative;}
+.scan-frame::after{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(237,41,57,0.9);transform:translateY(-50%);}
+.divider{display:flex;align-items:center;gap:12px;width:100%;max-width:300px;}
+.divider span{font-size:12px;color:#999;white-space:nowrap;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#e0e0e0;}
+input[type=number],input[type=text]{width:100%;max-width:300px;padding:13px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;background:#F5F7FF;color:#1A1A2E;-moz-appearance:textfield;}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;}
+input:focus{outline:none;border-color:#002395;}
+.status-msg{font-size:13px;color:#667788;text-align:center;padding:6px;max-width:300px;}
+.loading{text-align:center;padding:60px 16px;color:#667788;}
+.spinner{width:36px;height:36px;border:3px solid #eee;border-top-color:#002395;border-radius:50%;margin:0 auto 16px;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.product-header{background:#F5F7FF;border-radius:12px;border-left:4px solid #002395;padding:16px;margin-bottom:16px;overflow:hidden;}
+.product-img{width:80px;height:80px;object-fit:contain;border-radius:8px;border:1px solid #eee;float:right;margin-left:12px;background:white;padding:4px;}
+.product-name{font-size:17px;font-weight:600;color:#1A1A2E;margin-bottom:4px;line-height:1.3;}
+.product-name-de{font-size:12px;color:#999;margin-top:3px;}
+.product-brand{font-size:13px;color:#667788;margin-top:4px;}
+.section-title{font-size:11px;font-weight:600;color:#667788;text-transform:uppercase;letter-spacing:.06em;margin:18px 0 8px;}
+.score-row{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;}
+.score-num{font-size:32px;font-weight:700;}
+.score-denom{font-size:16px;color:#667788;}
+.score-bar-wrap{height:12px;border-radius:6px;background:linear-gradient(to right,#2D7A2D,#E8A020,#E03030);margin-bottom:4px;position:relative;}
+.score-marker{position:absolute;top:-4px;width:20px;height:20px;background:white;border:3px solid #002395;border-radius:50%;transform:translateX(-50%);box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.nutri-badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:600;margin-left:8px;}
+.nA{background:#1E8F4E;color:white;}.nB{background:#56AF2E;color:white;}.nC{background:#EFC525;color:#412402;}.nD{background:#E87B22;color:white;}.nE{background:#E02020;color:white;}.nX{background:#eee;color:#666;}
+.ingredients-box{background:#F5F7FF;border-radius:10px;padding:12px;font-size:13px;color:#444;line-height:1.7;border:1px solid #e8e8f0;}
+.translate-note{font-size:11px;color:#aaa;margin-top:6px;font-style:italic;}
+.allergens{display:flex;flex-wrap:wrap;gap:6px;}
+.allergen-pill{background:#FCEBEB;color:#A32D2D;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;}
+.error-box{background:#FCEBEB;border-radius:12px;padding:20px;text-align:center;color:#A32D2D;line-height:1.6;}
+.install-banner{background:#F5F7FF;border:1px solid #dde;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:16px;cursor:pointer;}
+.install-banner p{font-size:13px;color:#1A1A2E;line-height:1.4;}
+.install-banner span{font-size:11px;color:#667788;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar"></div>
+  <div class="appbar">
+    <button class="appbar-back" id="btn-back">←</button>
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="1" y="4" width="3" height="12" fill="white"/><rect x="5" y="4" width="1" height="12" fill="white"/><rect x="7" y="4" width="2" height="12" fill="white"/><rect x="11" y="4" width="1" height="12" fill="white"/><rect x="13" y="4" width="3" height="12" fill="white"/><rect x="17" y="4" width="2" height="12" fill="white"/></svg>
+    <span class="appbar-title" id="appbar-title">Tradukt</span>
+  </div>
+
+  <div id="scan-screen" class="screen">
+    <div id="install-banner" class="install-banner" style="display:none;">
+      <svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#002395"/><rect x="4" y="10" width="4" height="12" fill="white"/><rect x="10" y="10" width="2" height="12" fill="white"/><rect x="14" y="10" width="3" height="12" fill="white"/><rect x="19" y="10" width="2" height="12" fill="white"/><rect x="23" y="10" width="4" height="12" fill="white"/></svg>
+      <div><p><strong>Installer Tradukt</strong></p><span>Ajouter à l'écran d'accueil pour un accès rapide</span></div>
+    </div>
+    <div class="scan-area">
+      <div class="scan-icon">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none"><rect x="4" y="9" width="6" height="26" fill="#002395"/><rect x="12" y="9" width="2" height="26" fill="#002395"/><rect x="16" y="9" width="4" height="26" fill="#002395"/><rect x="22" y="9" width="2" height="26" fill="#002395"/><rect x="26" y="9" width="6" height="26" fill="#002395"/><rect x="34" y="9" width="4" height="26" fill="#002395"/></svg>
+      </div>
+      <p style="font-size:20px;font-weight:600;color:#1A1A2E;">Scanner un produit</p>
+      <p class="scan-hint">Scannez un produit allemand pour obtenir la traduction et le score santé en français</p>
+      <button class="btn-primary" id="btn-camera">📷 Utiliser la caméra</button>
+      <div id="scanner-wrap">
+        <video id="scanner-video" playsinline autoplay muted></video>
+        <div class="scan-overlay"><div class="scan-frame"></div></div>
+      </div>
+      <p id="scan-status" class="status-msg" style="display:none;"></p>
+      <div class="divider"><span>ou entrer le code</span></div>
+      <input type="number" id="barcode-input" placeholder="Ex: 4005808221608"/>
+      <button class="btn-primary" id="btn-search">Rechercher</button>
+    </div>
+  </div>
+
+  <div id="loading-screen" class="screen" style="display:none;">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Recherche du produit...</p>
+      <p style="font-size:12px;margin-top:8px;color:#aaa;">Traduction en cours...</p>
+    </div>
+  </div>
+
+  <div id="product-screen" class="screen" style="display:none;"></div>
+  <div id="error-screen" class="screen" style="display:none;"></div>
+</div>
+
+<script>
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+
+const $ = id => document.getElementById(id);
+const screens = {scan:$('scan-screen'),loading:$('loading-screen'),product:$('product-screen'),error:$('error-screen')};
+let stream=null, scanning=false, deferredPrompt=null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  $('install-banner').style.display = 'flex';
+});
+$('install-banner').addEventListener('click', () => {
+  if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt=null; $('install-banner').style.display='none'; }
+});
+
+function show(name){
+  Object.values(screens).forEach(s=>s.style.display='none');
+  screens[name].style.display='block';
+  $('btn-back').style.display = name==='scan'?'none':'block';
+  $('appbar-title').textContent = name==='scan'?'Tradukt':'Fiche produit';
+}
+$('btn-back').addEventListener('click',()=>{barcodeInput.value='';stopCamera();show('scan');});
+
+const btnCamera=$('btn-camera'), barcodeInput=$('barcode-input'), scanStatus=$('scan-status'), scannerWrap=$('scanner-wrap'), scannerVideo=$('scanner-video');
+
+btnCamera.addEventListener('click', async()=>{
+  if(stream){stopCamera();return;}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}}});
+    scannerVideo.srcObject=stream;
+    await scannerVideo.play();
+    scannerWrap.style.display='block';
+    btnCamera.textContent='⏹ Arrêter';
+    if('BarcodeDetector' in window){
+      scanStatus.textContent='Pointez vers un code-barres...';
+      scanStatus.style.display='block';
+      startDetection();
+    } else {
+      scanStatus.textContent='Détection auto non supportée. Entrez le code manuellement.';
+      scanStatus.style.display='block';
+    }
+  } catch(e){ alert('Permission caméra refusée. Utilisez la saisie manuelle.'); }
+});
+
+function stopCamera(){
+  scanning=false;
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  scannerWrap.style.display='none';
+  btnCamera.textContent='📷 Utiliser la caméra';
+  scanStatus.style.display='none';
+}
+
+async function startDetection(){
+  const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']});
+  scanning=true;
+  const canvas=document.createElement('canvas');
+  const ctx=canvas.getContext('2d');
+  async function loop(){
+    if(!scanning)return;
+    if(scannerVideo.readyState>=2){
+      canvas.width=scannerVideo.videoWidth; canvas.height=scannerVideo.videoHeight;
+      ctx.drawImage(scannerVideo,0,0);
+      try{
+        const r=await det.detect(canvas);
+        if(r.length>0){scanning=false;stopCamera();fetchProduct(r[0].rawValue);return;}
+      }catch(e){}
+    }
+    setTimeout(loop,200);
+  }
+  loop();
+}
+
+$('btn-search').addEventListener('click',()=>{const v=barcodeInput.value.trim();if(v)fetchProduct(v);else barcodeInput.focus();});
+barcodeInput.addEventListener('keydown',e=>{if(e.key==='Enter')$('btn-search').click();});
+
+async function translate(text){
+  if(!text||text.length<3)return text;
+  try{
+    const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(text.slice(0,500))+'&langpair=de|fr');
+    const d=await r.json();
+    if(d.responseStatus===200&&d.responseData.translatedText)return d.responseData.translatedText;
+  }catch(e){}
+  return text;
+}
+
+const ALLERGEN_FR={'en:gluten':'gluten','en:milk':'lait','en:eggs':'œufs','en:nuts':'fruits à coque','en:peanuts':'arachides','en:soybeans':'soja','en:fish':'poisson','en:celery':'céleri','en:mustard':'moutarde','en:sesame':'sésame','en:sulphites':'sulfites','en:lupin':'lupin','en:molluscs':'mollusques','en:crustaceans':'crustacés'};
+
+async function fetchProduct(barcode){
+  show('loading');
+  try{
+    const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+barcode+'.json?fields=product_name,product_name_de,product_name_fr,brands,image_front_small_url,ingredients_text,ingredients_text_de,nutriscore_grade,allergens_tags,additives_tags,nova_group');
+    const data=await r.json();
+    if(data.status===0||!data.product){showError('Produit introuvable pour le code <strong>'+barcode+'</strong>.<br><br>Ce produit n\'est peut-être pas encore dans la base Open Food Facts.');return;}
+    const p=data.product;
+    const rawName=p.product_name_de||p.product_name||'Nom inconnu';
+    const rawIngr=p.ingredients_text_de||p.ingredients_text||'';
+    const[trName,trIngr]=await Promise.all([translate(rawName),rawIngr?translate(rawIngr.slice(0,600)):Promise.resolve('')]);
+    const ns=(p.nutriscore_grade||'').toUpperCase();
+    const score=computeScore(p,ns);
+    const allergens=(p.allergens_tags||[]).map(a=>ALLERGEN_FR[a]||a.replace('en:','').replace(/-/g,' '));
+    renderProduct({rawName,trName,rawIngr,trIngr,ns,score,allergens,img:p.image_front_small_url||'',brand:p.brands||''});
+  }catch(e){showError('Erreur réseau.<br><br>Vérifiez votre connexion et réessayez.');}
+}
+
+function computeScore(p,ns){
+  const m={A:95,B:78,C:55,D:32,E:12};
+  if(m[ns])return m[ns];
+  let s=65;
+  const add=(p.additives_tags||[]).length;
+  const nova=parseInt(p.nova_group||0);
+  if(add>5)s-=20;else if(add>2)s-=10;
+  if(nova===4)s-=20;else if(nova===3)s-=10;
+  return Math.max(8,Math.min(92,s));
+}
+
+function renderProduct({rawName,trName,rawIngr,trIngr,ns,score,allergens,img,brand}){
+  const color=score>=70?'#2D7A2D':score>=40?'#E8A020':'#E03030';
+  const marker=Math.max(4,Math.min(96,score));
+  const nc='ABCDE'.includes(ns)?ns:'X';
+  screens.product.innerHTML=`
+    <div class="product-header">
+      ${img?'<img src="'+img+'" class="product-img" alt=""/>':''}
+      <div class="product-name">${trName}</div>
+      ${trName!==rawName?'<div class="product-name-de">🇩🇪 '+rawName+'</div>':''}
+      ${brand?'<div class="product-brand">'+brand+'</div>':''}
+    </div>
+    <div class="section-title">Score santé</div>
+    <div class="score-row">
+      <span class="score-num" style="color:${color}">${score}</span>
+      <span class="score-denom">/100</span>
+      ${nc!=='X'?'<span class="nutri-badge n'+nc+'">Nutriscore '+nc+'</span>':''}
+    </div>
+    <div class="score-bar-wrap"><div class="score-marker" style="left:${marker}%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-top:4px;"><span>Mauvais</span><span>Bon</span></div>
+    ${trIngr?'<div class="section-title">Ingrédients</div><div class="ingredients-box">'+trIngr+'</div><p class="translate-note">Traduit de l\'allemand · MyMemory</p>':''}
+    ${allergens.length?'<div class="section-title">Allergènes</div><div class="allergens">'+allergens.map(a=>'<span class="allergen-pill">'+a+'</span>').join('')+'</div>':''}
+    <div style="height:40px;"></div>
+  `;
+  show('product');
+}
+
+function showError(msg){
+  screens.error.innerHTML='<div class="error-box">'+msg+'</div>';
+  show('error');
+}
+</script>
+</body>
+</html>
